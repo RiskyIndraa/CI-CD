@@ -22,7 +22,7 @@ jobs:
         run: |
           if aws --version; then
             echo "✅ AWS CLI already installed. Updating..."
-            sudo ./aws/install --update
+            sudo apt update && sudo apt install -y awscli
           else
             echo "⚡ Installing AWS CLI..."
             sudo apt update
