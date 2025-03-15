@@ -21,30 +21,6 @@ jobs:
       - name: Install AWS CLI
         run: |
           if aws --version; then
-            echo "✅ AWS CLI already installed. Updating..."
-            sudo apt update && sudo apt install -y name: Deploy Flask App to AWS Elastic Beanstalk
-
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.13
-
-      - name: Install AWS CLI
-        run: |
-          if aws --version; then
             echo "✅ AWS CLI already installed. Skipping installation."
           else
             echo "⚡ Installing AWS CLI..."
@@ -70,7 +46,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-        continue-on-error: false
+      continue-on-error: false  # Perbaikan posisi
 
       - name: Debug - List project files
         run: ls -lah
@@ -85,7 +61,6 @@ jobs:
           echo "Uploading to S3..."
           aws s3 cp application.zip s3://${{ secrets.S3_BUCKET_NAME }}/deployments/application-${{ github.sha }}.zip
           echo "Upload complete."
-        continue-on-error: false
 
       - name: Debug - Check S3 bucket content
         run: |
@@ -103,70 +78,6 @@ jobs:
           aws elasticbeanstalk update-environment \
             --environment-name "${{ secrets.EB_ENV_NAME }}" \
             --version-label "${{ github.sha }}"
-        continue-on-error: false
-
-      - name: Debug - Check Elastic Beanstalk status
-        run: |
-          aws elasticbeanstalk describe-environments --application-name "${{ secrets.EB_APP_NAME }}"
-
-          else
-            echo "⚡ Installing AWS CLI..."
-            sudo apt update
-            sudo apt install -y curl unzip
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            unzip awscliv2.zip
-            sudo ./aws/install
-          fi
-          aws --version
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Debug - Verify AWS Credentials
-        run: aws sts get-caller-identity
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-        continue-on-error: false
-
-      - name: Debug - List project files
-        run: ls -lah
-
-      - name: Zip application for deployment
-        run: |
-          zip -r application.zip . -x '*.git*' '*.venv*' '__pycache__/*'
-          ls -lah application.zip
-
-      - name: Upload to S3
-        run: |
-          echo "Uploading to S3..."
-          aws s3 cp application.zip s3://${{ secrets.S3_BUCKET_NAME }}/deployments/application-${{ github.sha }}.zip
-          echo "Upload complete."
-        continue-on-error: false
-
-      - name: Debug - Check S3 bucket content
-        run: |
-          aws s3 ls s3://${{ secrets.S3_BUCKET_NAME }}/deployments/
-
-      - name: Deploy to Elastic Beanstalk
-        run: |
-          echo "Creating new application version..."
-          aws elasticbeanstalk create-application-version \
-            --application-name "${{ secrets.EB_APP_NAME }}" \
-            --version-label "${{ github.sha }}" \
-            --source-bundle S3Bucket="${{ secrets.S3_BUCKET_NAME }}",S3Key="deployments/application-${{ github.sha }}.zip"
-
-          echo "Updating Elastic Beanstalk environment..."
-          aws elasticbeanstalk update-environment \
-            --environment-name "${{ secrets.EB_ENV_NAME }}" \
-            --version-label "${{ github.sha }}"
-        continue-on-error: false
 
       - name: Debug - Check Elastic Beanstalk status
         run: |
