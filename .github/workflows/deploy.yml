@@ -20,11 +20,17 @@ jobs:
 
       - name: Install AWS CLI
         run: |
-          sudo apt update
-          sudo apt install -y curl unzip
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip awscliv2.zip
-          sudo ./aws/install
+          if aws --version; then
+            echo "✅ AWS CLI already installed. Updating..."
+            sudo ./aws/install --update
+          else
+            echo "⚡ Installing AWS CLI..."
+            sudo apt update
+            sudo apt install -y curl unzip
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+          fi
           aws --version
 
       - name: Configure AWS Credentials
@@ -33,6 +39,9 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Debug - Verify AWS Credentials
+        run: aws sts get-caller-identity
 
       - name: Install dependencies
         run: |
@@ -71,6 +80,7 @@ jobs:
           aws elasticbeanstalk update-environment \
             --environment-name "${{ secrets.EB_ENV_NAME }}" \
             --version-label "${{ github.sha }}"
+        continue-on-error: false
 
       - name: Debug - Check Elastic Beanstalk status
         run: |
